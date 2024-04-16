@@ -35,9 +35,6 @@
 
 #include "ClientConnection.h"
 
-
-
-
 ClientConnection::ClientConnection(int s) {
   char buffer[MAX_BUFF];
 
@@ -124,13 +121,17 @@ void ClientConnection::WaitForRequests() {
   
   while(!parar) {
     fscanf(fd, "%s", command);
+
+    // ========== COMMAND USER ==========
     if (COMMAND("USER")) {
       fscanf(fd, "%s", arg);
       fprintf(fd, "331 User name ok, need password\n");
     }
+    // ========== COMMAND PWD ==========
     else if (COMMAND("PWD")) {
 
     }
+    // ========== COMMAND PASS ==========
     else if (COMMAND("PASS")) {
       fscanf(fd, "%s", arg);
       if(strcmp(arg,"1234") == 0){
@@ -141,6 +142,7 @@ void ClientConnection::WaitForRequests() {
         parar = true;
       }
     }
+    // ========== COMMAND PORT ==========
     else if (COMMAND("PORT")) {
       int a1, a2, a3, a4, p1, p2;
       int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -154,12 +156,15 @@ void ClientConnection::WaitForRequests() {
 
       fprintf(f, "200 PORT command successful.\n");
     }
+    // ========== COMMAND PASV ==========
     else if (COMMAND("PASV")) {
     // To be implemented by students
     }
+    // ========== COMMAND STOR ==========
     else if (COMMAND("STOR") ) {
     // To be implemented by students
     }
+    // ========== COMMAND RETR ==========
     else if (COMMAND("RETR")) {
       fscanf(fd, "%s", arg);
       FILE *f = fopen(arg, "r");
@@ -178,19 +183,24 @@ void ClientConnection::WaitForRequests() {
         fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
       }
     }
+    // ========== COMMAND LIST ==========
     else if (COMMAND("LIST")) {
     // To be implemented by students	
     }
+    // ========== COMMAND SYST ==========
     else if (COMMAND("SYST")) {
       fprintf(fd, "215 UNIX Type: L8.\n");   
     }
+    // ========== COMMAND TYPE ==========
     else if (COMMAND("TYPE")) {
       fscanf(fd, "%s", arg);
       fprintf(fd, "200 OK\n");   
     }
+    // ========== COMMAND FEAT ==========
     else if (COMMAND("FEAT")) {
       fprintf(fd, "502 Command not implemented.\n");   
     }
+    // ========== COMMAND QUIT ==========
     else if (COMMAND("QUIT")) {
       fprintf(fd, "221 Service closing control connection. Logged out if appropriate.\n");
       close(data_socket);	
