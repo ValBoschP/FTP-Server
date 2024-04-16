@@ -39,20 +39,20 @@
 
 
 ClientConnection::ClientConnection(int s) {
-    int sock = (int)(s);
-  
-    char buffer[MAX_BUFF];
+  int sock = (int)(s);
 
-    control_socket = s;
-    // Check the Linux man pages to know what fdopen does.
-    fd = fdopen(s, "a+");
-    if (fd == NULL){
-	std::cout << "Connection closed" << std::endl;
+  char buffer[MAX_BUFF];
 
-	fclose(fd);
-	close(control_socket);
-	ok = false;
-	return ;
+  control_socket = s;
+  // Check the Linux man pages to know what fdopen does.
+  fd = fdopen(s, "a+");
+  if (fd == NULL) {
+	  std::cout << "Connection closed" << std::endl;
+
+    fclose(fd);
+    close(control_socket);
+    ok = false;
+    return ;
     }
     
     ok = true;
@@ -72,8 +72,7 @@ ClientConnection::~ClientConnection() {
 
 /*
   PORT a1, a2, a3, a4, p1, p2;
-  int a1, a2, a3, a4, p1, p2;
-  int p1, p2;
+  
   fscanf(f, "%d.%d.%d.%d.%d.%d", &a1, &a2, &a3, &a4, &p1, &p2);
 
   address (entero de 32, se segmenta en 4 partes, donde se colocan los valores de a1, a2, a3, a4)
@@ -85,14 +84,19 @@ ClientConnection::~ClientConnection() {
 
   fprintf(f, "200 PORT command successful.\n");
 
-
 */
 int connect_TCP( uint32_t address,  uint16_t  port) {
   // Implement your code to define a socket here
+  int a1, a2, a3, a4, p1, p2;
+  
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  FILE *f = fdopen(fd, "a+");
+  fscanf(f, "%d.%d.%d.%d.%d.%d", &a1, &a2, &a3, &a4, &p1, &p2);
+  address = (a1 << 24) | (a2 << 16) | (a3 << 8) | a4;
+  port = (p1 << 8) | p2;
 
-     
-  return -1; // You must return the socket descriptor.
-
+  fprintf(f, "200 PORT command successful.\n");
+  return fd; // You must return the socket descriptor.
 }
 
 
