@@ -161,7 +161,22 @@ void ClientConnection::WaitForRequests() {
     // To be implemented by students
     }
     else if (COMMAND("RETR")) {
-    // To be implemented by students
+      fscanf(fd, "%s", arg);
+      FILE *f = fopen(arg, "r");
+      if(f == NULL){
+        fprintf(fd, "550 File not found.\n");
+      }
+      else {
+        fprintf(fd, "150 File status okay; about to open data connection.\n");
+        char buffer[MAX_BUFF];
+        int s;
+        while((s = fread(buffer, 1, MAX_BUFF, f)) > 0){
+          write(data_socket, buffer, s);
+        }
+        fclose(f);
+        close(data_socket);
+        fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
+      }
     }
     else if (COMMAND("LIST")) {
     // To be implemented by students	
@@ -173,13 +188,16 @@ void ClientConnection::WaitForRequests() {
       fscanf(fd, "%s", arg);
       fprintf(fd, "200 OK\n");   
     }
+    else if (COMMAND("FEAT")) {
+      fprintf(fd, "502 Command not implemented.\n");   
+    }
     else if (COMMAND("QUIT")) {
       fprintf(fd, "221 Service closing control connection. Logged out if appropriate.\n");
       close(data_socket);	
       parar=true;
       break;
     }
-    else  {
+    else {
       fprintf(fd, "502 Command not implemented.\n"); fflush(fd);
       printf("Comando : %s %s\n", command, arg);
       printf("Error interno del servidor\n");

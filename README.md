@@ -1,1 +1,1 @@
-# FTP-Server
+# Simple FTP Server
