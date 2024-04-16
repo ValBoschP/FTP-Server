@@ -39,8 +39,6 @@
 
 
 ClientConnection::ClientConnection(int s) {
-  int sock = (int)(s);
-
   char buffer[MAX_BUFF];
 
   control_socket = s;
@@ -53,21 +51,17 @@ ClientConnection::ClientConnection(int s) {
     close(control_socket);
     ok = false;
     return ;
-    }
+  }
     
-    ok = true;
-    data_socket = -1;
-    parar = false;
-   
-  
-  
+  ok = true;
+  data_socket = -1;
+  parar = false;
 };
 
 
 ClientConnection::~ClientConnection() {
  	fclose(fd);
 	close(control_socket); 
-  
 }
 
 /*
@@ -85,35 +79,34 @@ ClientConnection::~ClientConnection() {
   fprintf(f, "200 PORT command successful.\n");
 
 */
-int connect_TCP( uint32_t address,  uint16_t  port) {
+int connect_TCP(uint32_t address,  uint16_t  port) {
   // Implement your code to define a socket here
-  int a1, a2, a3, a4, p1, p2;
+  struct sockaddr_in sin;
+  struct hostent *hent;
+  int s;
+
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family = AF_INET;
+  sin.sin_port = htons(port);
+  sin.sin_addr.s_addr = address;
+
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0) {
+    errexit("Can't create socket: %s\n", strerror(errno));
+  }
+  if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    errexit("Can't connect to %s.%d: %s\n", address, port, strerror(errno));
+  }
   
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
-  FILE *f = fdopen(fd, "a+");
-  fscanf(f, "%d.%d.%d.%d.%d.%d", &a1, &a2, &a3, &a4, &p1, &p2);
-  address = (a1 << 24) | (a2 << 16) | (a3 << 8) | a4;
-  port = (p1 << 8) | p2;
-
-  fprintf(f, "200 PORT command successful.\n");
-  return fd; // You must return the socket descriptor.
+  return s; // You must return the socket descriptor.
 }
-
-
-
-
 
 
 void ClientConnection::stop() {
-    close(data_socket);
-    close(control_socket);
-    parar = true;
-  
+  close(data_socket);
+  close(control_socket);
+  parar = true;
 }
-
-
-
-
 
     
 #define COMMAND(cmd) strcmp(command, cmd)==0
@@ -125,76 +118,74 @@ void ClientConnection::stop() {
 // are allowed to add auxiliary methods if necessary.
 
 void ClientConnection::WaitForRequests() {
-    if (!ok) {
-	 return;
-    }
+  if (!ok) return;
     
-    fprintf(fd, "220 Service ready\n");
+  fprintf(fd, "220 Service ready\n");
   
-    while(!parar) {
+  while(!parar) {
+    fscanf(fd, "%s", command);
+    if (COMMAND("USER")) {
+      fscanf(fd, "%s", arg);
+      fprintf(fd, "331 User name ok, need password\n");
+    }
+    else if (COMMAND("PWD")) {
 
-      fscanf(fd, "%s", command);
-      if (COMMAND("USER")) {
-	    fscanf(fd, "%s", arg);
-	    fprintf(fd, "331 User name ok, need password\n");
+    }
+    else if (COMMAND("PASS")) {
+      fscanf(fd, "%s", arg);
+      if(strcmp(arg,"1234") == 0){
+        fprintf(fd, "230 User logged in\n");
       }
-      else if (COMMAND("PWD")) {
-	   
+      else{
+        fprintf(fd, "530 Not logged in.\n");
+        parar = true;
       }
-      else if (COMMAND("PASS")) {
-        fscanf(fd, "%s", arg);
-        if(strcmp(arg,"1234") == 0){
-            fprintf(fd, "230 User logged in\n");
-        }
-        else{
-            fprintf(fd, "530 Not logged in.\n");
-            parar = true;
-        }
-	   
-      }
-      else if (COMMAND("PORT")) {
-	  // To be implemented by students
-      }
-      else if (COMMAND("PASV")) {
-	  // To be implemented by students
-      }
-      else if (COMMAND("STOR") ) {
-	    // To be implemented by students
-      }
-      else if (COMMAND("RETR")) {
-	   // To be implemented by students
-      }
-      else if (COMMAND("LIST")) {
-	   // To be implemented by students	
-      }
-      else if (COMMAND("SYST")) {
-           fprintf(fd, "215 UNIX Type: L8.\n");   
-      }
-
-      else if (COMMAND("TYPE")) {
-	  fscanf(fd, "%s", arg);
-	  fprintf(fd, "200 OK\n");   
-      }
-     
-      else if (COMMAND("QUIT")) {
-        fprintf(fd, "221 Service closing control connection. Logged out if appropriate.\n");
-        close(data_socket);	
-        parar=true;
-        break;
-      }
-  
-      else  {
-	    fprintf(fd, "502 Command not implemented.\n"); fflush(fd);
-	    printf("Comando : %s %s\n", command, arg);
-	    printf("Error interno del servidor\n");
-	
-      }
+    }
+    else if (COMMAND("PORT")) {
+      int a1, a2, a3, a4, p1, p2;
+      int fd = socket(AF_INET, SOCK_STREAM, 0);
+      FILE *f = fdopen(fd, "a+");
       
-    }
-    
-    fclose(fd);
+      fscanf(f, "%d,%d,%d,%d,%d,%d", &a1, &a2, &a3, &a4, &p1, &p2);
+      uint32_t address = (a1 << 24) | (a2 << 16) | (a3 << 8) | a4;
+      uint16_t port = (p1 << 8) | p2;
 
-    
-    return;
-  
+      data_socket = connect_TCP(address, port);
+
+      fprintf(f, "200 PORT command successful.\n");
+    }
+    else if (COMMAND("PASV")) {
+    // To be implemented by students
+    }
+    else if (COMMAND("STOR") ) {
+    // To be implemented by students
+    }
+    else if (COMMAND("RETR")) {
+    // To be implemented by students
+    }
+    else if (COMMAND("LIST")) {
+    // To be implemented by students	
+    }
+    else if (COMMAND("SYST")) {
+      fprintf(fd, "215 UNIX Type: L8.\n");   
+    }
+    else if (COMMAND("TYPE")) {
+      fscanf(fd, "%s", arg);
+      fprintf(fd, "200 OK\n");   
+    }
+    else if (COMMAND("QUIT")) {
+      fprintf(fd, "221 Service closing control connection. Logged out if appropriate.\n");
+      close(data_socket);	
+      parar=true;
+      break;
+    }
+    else  {
+      fprintf(fd, "502 Command not implemented.\n"); fflush(fd);
+      printf("Comando : %s %s\n", command, arg);
+      printf("Error interno del servidor\n");
+    }
+  }
+  fclose(fd);
+
+  return;
 };

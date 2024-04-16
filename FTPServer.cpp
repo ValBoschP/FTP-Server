@@ -52,10 +52,6 @@ int define_socket_TCP(int port) {
   return s;
 }
 
-
-
-
-
 // This function is executed when the thread is executed.
 void* run_client_connection(void *c) {
   ClientConnection *connection = (ClientConnection *)c;
@@ -63,19 +59,15 @@ void* run_client_connection(void *c) {
   return NULL;
 }
 
-
-
 FTPServer::FTPServer(int port) {
   this->port = port;
 }
-
 
 // Parada del servidor.
 void FTPServer::stop() {
   close(msock);
   shutdown(msock, SHUT_RDWR);
 }
-
 
 // Starting of the server
 void FTPServer::run() {
