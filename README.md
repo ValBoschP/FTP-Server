@@ -28,11 +28,11 @@ on your system:
 
 To compile the code use the make command:
 ```bash
-$ make all
+make all
 ```
 To run the server use:
 ```bash
-$ ./ftp_server
+./ftp_server
 ```
 
 ### Report
