@@ -18,4 +18,5 @@ private:
   std::list<ClientConnection*> connection_list;
 };
 
+int define_socket_TCP(int port);
 #endif

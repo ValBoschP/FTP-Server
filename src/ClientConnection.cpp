@@ -34,6 +34,7 @@
 #include "common.h"
 
 #include "ClientConnection.h"
+#include "FTPServer.h"
 
 ClientConnection::ClientConnection(int s) {
   char buffer[MAX_BUFF];
@@ -157,7 +158,21 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND PASV ==========
     else if (COMMAND("PASV")) {
-    // To be implemented by students
+      int s = define_socket_TCP(0);
+      struct sockaddr_in fsin;
+      socklen_t slen = sizeof(fsin);
+      getsockname(s, (struct sockaddr *)&fsin, &slen);
+      uint32_t address = fsin.sin_addr.s_addr;
+      uint16_t port = fsin.sin_port;
+      int p1 = (port >> 8) & 0xFF;
+      int p2 = port & 0xFF;
+      // int a1 = (address >> 24) & 0xFF;
+      // int a2 = (address >> 16) & 0xFF;
+      // int a3 = (address >> 8) & 0xFF;
+      // int a4 = address & 0xFF;
+      fprintf(fd, "227 Entering Passive Mode (127,0,0,1,%d,%d)\n", p2, p1);
+      fflush(fd);
+      data_socket = accept(s, (struct sockaddr *)&fsin, &slen);
     }
     // ========== COMMAND STOR ==========
     else if (COMMAND("STOR") ) {
@@ -194,12 +209,13 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND LIST ==========
     else if (COMMAND("LIST")) {
-    // To be implemented by students
+      
       fprintf(fd, "150 File status okay; about to open data connection.\n");
       DIR *d = opendir(".");
       struct dirent *dir;
       while ((dir = readdir(d)) != NULL) {
-        fprintf(fd, "%s\n", dir->d_name);
+        write(data_socket, dir->d_name, strlen(dir->d_name));
+        write(data_socket, "\n", 1);
       }
       fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
       closedir(d);
@@ -217,17 +233,17 @@ void ClientConnection::WaitForRequests() {
     // ========== COMMAND MDTM ==========
     else if (COMMAND("MDTM")) {
       fscanf(fd, "%s", arg);
-      struct stat st;
-      if (stat(arg, &st) == 0) {
-        fprintf(fd, "213 %ld\n", st.st_mtime);
-      }
-      else {
-        fprintf(fd, "550 File not found.\n");
-      }
+      fprintf(fd, "502 Command not implemented.\n");
     }
     // ========== COMMAND FEAT ==========
     else if (COMMAND("FEAT")) {
+      fprintf(fd, "502 Command not implemented.\n");
+    }
+    // ========== COMMAND EPSV ==========
+    else if (COMMAND("EPSV")) {
+      // fscanf(fd, "%s", arg);
       fprintf(fd, "502 Command not implemented.\n");   
+      fflush(fd);
     }
     // ========== COMMAND SIZE ==========
     else if (COMMAND("SIZE")) {
