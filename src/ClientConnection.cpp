@@ -76,6 +76,7 @@ ClientConnection::~ClientConnection() {
   fprintf(f, "200 PORT command successful.\n");
 
 */
+
 int connect_TCP(uint32_t address,  uint16_t  port) {
   // Implement your code to define a socket here
   struct sockaddr_in sin;
@@ -145,16 +146,14 @@ void ClientConnection::WaitForRequests() {
     // ========== COMMAND PORT ==========
     else if (COMMAND("PORT")) {
       int a1, a2, a3, a4, p1, p2;
-      int fd = socket(AF_INET, SOCK_STREAM, 0);
-      FILE *f = fdopen(fd, "a+");
       
-      fscanf(f, "%d,%d,%d,%d,%d,%d", &a1, &a2, &a3, &a4, &p1, &p2);
-      uint32_t address = (a1 << 24) | (a2 << 16) | (a3 << 8) | a4;
+      fscanf(fd, "%d,%d,%d,%d,%d,%d", &a1, &a2, &a3, &a4, &p1, &p2);
+      uint32_t address = (a4 << 24) | (a3 << 16) | (a2 << 8) | a1;
       uint16_t port = (p1 << 8) | p2;
-
+      std::cout << a1 << " " << a2 << " " << a3 << " " << a4 << " " << p1 << " " << p2 << std::endl;
+      std::cout << "Address: " << address << " Port: " << port << std::endl;
       data_socket = connect_TCP(address, port);
-
-      fprintf(f, "200 PORT command successful.\n");
+      fprintf(fd, "200 PORT command successful.\n");
     }
     // ========== COMMAND PASV ==========
     else if (COMMAND("PASV")) {
@@ -163,13 +162,23 @@ void ClientConnection::WaitForRequests() {
     // ========== COMMAND STOR ==========
     else if (COMMAND("STOR") ) {
     // To be implemented by students
+      fscanf(fd, "%s", arg);
+      FILE *f = fopen(arg, "w");
+      char buffer[MAX_BUFF];
+      do {
+        fwrite(buffer, sizeof buffer[0], MAX_BUFF, f);
+      } while (read(data_socket, buffer, MAX_BUFF) > 0);
+      fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
+      fclose(f);
+      close(data_socket);
     }
     // ========== COMMAND RETR ==========
     else if (COMMAND("RETR")) {
       fscanf(fd, "%s", arg);
       FILE *f = fopen(arg, "r");
-      if(f == NULL){
+      if (f == NULL) {
         fprintf(fd, "550 File not found.\n");
+        break;
       }
       else {
         fprintf(fd, "150 File status okay; about to open data connection.\n");
@@ -185,7 +194,16 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND LIST ==========
     else if (COMMAND("LIST")) {
-    // To be implemented by students	
+    // To be implemented by students
+      fprintf(fd, "150 File status okay; about to open data connection.\n");
+      DIR *d = opendir(".");
+      struct dirent *dir;
+      while ((dir = readdir(d)) != NULL) {
+        fprintf(fd, "%s\n", dir->d_name);
+      }
+      fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
+      closedir(d);
+      close(data_socket);
     }
     // ========== COMMAND SYST ==========
     else if (COMMAND("SYST")) {
@@ -196,9 +214,31 @@ void ClientConnection::WaitForRequests() {
       fscanf(fd, "%s", arg);
       fprintf(fd, "200 OK\n");   
     }
+    // ========== COMMAND MDTM ==========
+    else if (COMMAND("MDTM")) {
+      fscanf(fd, "%s", arg);
+      struct stat st;
+      if (stat(arg, &st) == 0) {
+        fprintf(fd, "213 %ld\n", st.st_mtime);
+      }
+      else {
+        fprintf(fd, "550 File not found.\n");
+      }
+    }
     // ========== COMMAND FEAT ==========
     else if (COMMAND("FEAT")) {
       fprintf(fd, "502 Command not implemented.\n");   
+    }
+    // ========== COMMAND SIZE ==========
+    else if (COMMAND("SIZE")) {
+      fscanf(fd, "%s", arg);
+      struct stat st;
+      if (stat(arg, &st) == 0) {
+        fprintf(fd, "213 %ld bytes\n", st.st_size);
+      }
+      else {
+        fprintf(fd, "550 File not found.\n");
+      }
     }
     // ========== COMMAND QUIT ==========
     else if (COMMAND("QUIT")) {
