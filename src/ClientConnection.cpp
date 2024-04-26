@@ -176,14 +176,19 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND STOR ==========
     else if (COMMAND("STOR") ) {
-    // To be implemented by students
       fscanf(fd, "%s", arg);
-      FILE *f = fopen(arg, "w");
+      FILE *f = fopen(arg, "wb");
       char buffer[MAX_BUFF];
+      int result;
+      fprintf(fd, "125 Data connection already open; transfer starting.\n");
+      fflush(fd);
       do {
-        fwrite(buffer, sizeof buffer[0], MAX_BUFF, f);
-      } while (read(data_socket, buffer, MAX_BUFF) > 0);
+        result = recv(data_socket, buffer, MAX_BUFF,0);
+        std::cout << "Result: " << result << std::endl;
+        fwrite(buffer, 1, result, f);
+      } while (result > 0);
       fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
+      fflush(fd);
       fclose(f);
       close(data_socket);
     }
