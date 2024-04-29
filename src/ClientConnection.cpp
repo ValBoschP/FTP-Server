@@ -131,7 +131,13 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND PWD ==========
     else if (COMMAND("PWD")) {
-
+      char cwd[1024];
+      if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        fprintf(fd, "257 \"%s\" is the current directory\n", cwd);
+      }
+      else {
+        fprintf(fd, "550 Failed to get current directory\n");
+      }
     }
     // ========== COMMAND PASS ==========
     else if (COMMAND("PASS")) {
