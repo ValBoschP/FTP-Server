@@ -127,7 +127,7 @@ void ClientConnection::WaitForRequests() {
     // ========== COMMAND USER ==========
     if (COMMAND("USER")) {
       fscanf(fd, "%s", arg);
-      fprintf(fd, "331 User name ok, need password\n");
+      fprintf(fd, "331 User name okay, need password\n");
     }
     // ========== COMMAND PWD ==========
     else if (COMMAND("PWD")) {
@@ -176,7 +176,7 @@ void ClientConnection::WaitForRequests() {
       // int a2 = (address >> 16) & 0xFF;
       // int a3 = (address >> 8) & 0xFF;
       // int a4 = address & 0xFF;
-      fprintf(fd, "227 Entering Passive Mode (127,0,0,1,%d,%d)\n", p2, p1);
+      fprintf(fd, "227 Entering Passive Mode (127,0,0,1,%d,%d).\n", p2, p1);
       fflush(fd);
       data_socket = accept(s, (struct sockaddr *)&fsin, &slen);
     }
@@ -193,6 +193,7 @@ void ClientConnection::WaitForRequests() {
         std::cout << "Result: " << result << std::endl;
         fwrite(buffer, 1, result, f);
       } while (result > 0);
+      // fprintf(fd, "250 Requested file action okay, completed.\n");         <-------------
       fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
       fflush(fd);
       fclose(f);
@@ -220,9 +221,12 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND LIST ==========
     else if (COMMAND("LIST")) {
-      
-      fprintf(fd, "150 File status okay; about to open data connection.\n");
       DIR *d = opendir(".");
+      if (d == NULL) {
+        fprintf(fd, "550 Failed to open directory\n");
+        break;
+      }
+      fprintf(fd, "150 File status okay; about to open data connection.\n");
       struct dirent *dir;
       while ((dir = readdir(d)) != NULL) {
         write(data_socket, dir->d_name, strlen(dir->d_name));
