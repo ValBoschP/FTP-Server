@@ -252,7 +252,7 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND FEAT ==========
     else if (COMMAND("FEAT")) {
-      fprintf(fd, "502 Command not implemented.\n");
+      fprintf(fd, "202 Command not implemented.\n");
     }
     // ========== COMMAND EPSV ==========
     else if (COMMAND("EPSV")) {
@@ -272,7 +272,7 @@ void ClientConnection::WaitForRequests() {
       }
     }
     // ========== COMMAND QUIT ==========
-    else if (COMMAND("QUIT")) {
+    else if (COMMAND("QUIT") || COMMAND("EXIT")) {
       fprintf(fd, "221 Service closing control connection. Logged out if appropriate.\n");
       close(data_socket);	
       parar=true;
