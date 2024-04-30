@@ -230,7 +230,7 @@ void ClientConnection::WaitForRequests() {
       struct dirent *dir;
       while ((dir = readdir(d)) != NULL) {
         write(data_socket, dir->d_name, strlen(dir->d_name));
-        write(data_socket, "\n", 1);
+        write(data_socket, "\r\n", 2);
       }
       fprintf(fd, "226 Closing data connection. Requested file action successful.\n");
       closedir(d);
