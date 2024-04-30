@@ -252,7 +252,7 @@ void ClientConnection::WaitForRequests() {
     }
     // ========== COMMAND FEAT ==========
     else if (COMMAND("FEAT")) {
-      fprintf(fd, "202 Command not implemented.\n");
+      fprintf(fd, "502 Command not implemented.\n");
     }
     // ========== COMMAND EPSV ==========
     else if (COMMAND("EPSV")) {
